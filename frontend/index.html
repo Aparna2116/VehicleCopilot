@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoExplain AI — Vehicle Health Copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14171a;
+    --surface: #1e2227;
+    --surface-raised: #262b31;
+    --surface-hover: #2d333a;
+    --border: #33393f;
+    --text: #ecece4;
+    --text-dim: #9aa0a6;
+    --text-faint: #666d74;
+    --accent: #ff8a3d;
+    --accent-dim: #cc6f2e;
+    --green: #4cae6d;
+    --yellow: #e4b93f;
+    --orange: #ff8a3d;
+    --red: #e5484d;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-tap-highlight-color: transparent; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  ::selection { background: var(--accent); color: #14171a; }
+
+  /* ---------------- Header ---------------- */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(20,23,26,0.92);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+  }
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .logo-mark {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    border: 1px solid var(--accent);
+    padding: 3px 7px;
+    border-radius: 4px;
+  }
+  .logo-text { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+  .tagline { font-size: 12px; color: var(--text-faint); font-family: var(--mono); }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 32px 24px 120px; }
+
+  h2 {
+    font-size: 13px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 1px;
+  }
+
+  /* ---------------- Vehicle plate cards ---------------- */
+  .vehicle-row {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 36px;
+  }
+  .plate {
+    flex: 0 0 auto;
+    width: 200px;
+    background: #f0ede4;
+    color: #14171a;
+    border-radius: 6px;
+    padding: 14px 16px 12px;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: transform .15s ease, border-color .15s ease;
+    position: relative;
+    font-family: var(--mono);
+  }
+  .plate:hover { transform: translateY(-2px); }
+  .plate.selected { border-color: var(--accent); }
+  .plate::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg,#ff9933 0%,#ff9933 33%,#fff 33%,#fff 66%,#138808 66%);
+    border-radius: 6px 0 0 6px;
+  }
+  .plate-reg { font-size: 11px; color: #6b6558; letter-spacing: 0.05em; }
+  .plate-name { font-size: 18px; font-weight: 700; margin-top: 4px; line-height: 1.2; }
+  .plate-year { font-size: 12px; color: #6b6558; margin-top: 2px; }
+  .plate-badge {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 9px; padding: 2px 6px; border-radius: 3px;
+    font-weight: 700; text-transform: uppercase;
+  }
+
+  .plate-add {
+    flex: 0 0 auto;
+    width: 200px;
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-faint);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 13px;
+    transition: border-color .15s, color .15s;
+  }
+  .plate-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------------- Add vehicle form ---------------- */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 36px;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 100px;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  input, textarea {
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 14px;
+    width: 100%;
+  }
+  input:focus, textarea:focus, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  ::placeholder { color: var(--text-faint); }
+
+  button {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+  button:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #14171a; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text-dim); }
+
+  /* ---------------- Upload zone ---------------- */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    margin-bottom: 36px;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(255,138,61,0.05);
+  }
+  .upload-zone .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-zone .upload-title { font-weight: 600; margin-bottom: 4px; }
+  .upload-zone .upload-sub { font-size: 13px; color: var(--text-faint); }
+
+  .status-line {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: none;
+  }
+  .status-line.active { display: block; }
+
+  /* ---------------- Report / issue cards ---------------- */
+  .summary-banner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    font-size: 14px;
+  }
+  .issue-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    border-left: 4px solid var(--border);
+  }
+  .issue-card.sev-green { border-left-color: var(--green); }
+  .issue-card.sev-yellow { border-left-color: var(--yellow); }
+  .issue-card.sev-orange { border-left-color: var(--orange); }
+  .issue-card.sev-red { border-left-color: var(--red); }
+
+  .issue-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .issue-title { font-size: 16px; font-weight: 700; }
+  .sev-pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .sev-pill.sev-green { background: rgba(76,174,109,0.15); color: var(--green); }
+  .sev-pill.sev-yellow { background: rgba(228,185,63,0.15); color: var(--yellow); }
+  .sev-pill.sev-orange { background: rgba(255,138,61,0.15); color: var(--orange); }
+  .sev-pill.sev-red { background: rgba(229,72,77,0.15); color: var(--red); }
+
+  .issue-meaning { color: var(--text); line-height: 1.55; margin-bottom: 10px; }
+  .issue-meta { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--text-dim); margin-bottom: 10px; }
+  .issue-meta strong { color: var(--text); font-family: var(--mono); font-weight: 500; }
+  .issue-list { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text-dim); }
+  .issue-list li { margin-bottom: 3px; }
+  .issue-section-label { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin: 10px 0 4px; }
+
+  /* ---------------- History ---------------- */
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .history-item:hover { border-color: var(--accent); }
+  .history-item .h-date { font-family: var(--mono); color: var(--text-faint); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-faint);
+    font-size: 14px;
+  }
+
+  /* ---------------- Chat (virtual mechanic) ---------------- */
+  #chat-toggle {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--accent);
+    color: #14171a;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 16px rgba(255,138,61,0.35);
+    z-index: 20;
+    border: none;
+    cursor: pointer;
+  }
+  #chat-panel {
+    position: fixed;
+    bottom: 92px; right: 24px;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    height: 520px;
+    max-height: calc(100vh - 140px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 20;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  #chat-panel.open { display: flex; }
+  .chat-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chat-head .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .chat-head-title { font-weight: 700; font-size: 14px; }
+  .chat-head-sub { font-size: 11px; color: var(--text-faint); font-family: var(--mono); margin-left: auto; }
+
+  .chat-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .msg { max-width: 85%; padding: 9px 12px; border-radius: 10px; font-size: 13.5px; line-height: 1.5; }
+  .msg.user { align-self: flex-end; background: var(--accent); color: #14171a; border-bottom-right-radius: 2px; }
+  .msg.assistant { align-self: flex-start; background: var(--surface-raised); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+  .msg.typing { color: var(--text-faint); font-style: italic; }
+
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .chat-input-row input { flex: 1; }
+  .chat-input-row button { padding: 10px 14px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+    #chat-panel { right: 16px; bottom: 84px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-mark">AX</span>
+    <span class="logo-text">AutoExplain AI</span>
+  </div>
+  <span class="tagline">understand your vehicle, not just your bill</span>
+</header>
+
+<main>
+  <section>
+    <h2>Your vehicles</h2>
+    <div class="vehicle-row" id="vehicle-row"></div>
+  </section>
+
+  <section id="add-vehicle-form" class="form-card" style="display:none;">
+    <div class="form-grid">
+      <input id="v-make" placeholder="Make (e.g. Maruti Suzuki)" />
+      <input id="v-model" placeholder="Model (e.g. WagonR)" />
+      <input id="v-year" placeholder="Year" type="number" />
+    </div>
+    <div class="form-grid">
+      <input id="v-nickname" placeholder="Nickname (optional)" />
+      <input id="v-reg" placeholder="Registration number (optional)" />
+    </div>
+    <button class="btn-primary" onclick="createVehicle()">Add vehicle</button>
+    <button class="btn-ghost" onclick="toggleAddForm(false)" style="margin-left:8px;">Cancel</button>
+  </section>
+
+  <section id="vehicle-workspace" style="display:none;">
+    <h2 id="workspace-title">Report</h2>
+
+    <div class="upload-zone" id="upload-zone">
+      <div class="upload-icon">&#128196;</div>
+      <div class="upload-title">Drop a report here, or click to upload</div>
+      <div class="upload-sub">PDF, JPG, PNG, HEIC &middot; service, inspection, or diagnostic reports</div>
+      <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.heic" style="display:none;" />
+    </div>
+    <div class="status-line" id="status-line"></div>
+
+    <div id="analysis-result"></div>
+
+    <h2 style="margin-top:32px;">Report history</h2>
+    <div id="history-list"><div class="empty-state">No reports analyzed yet for this vehicle.</div></div>
+  </section>
+
+  <div id="no-vehicle-empty" class="empty-state">
+    Add your first vehicle above to get started.
+  </div>
+</main>
+
+<button id="chat-toggle" onclick="toggleChat()" aria-label="Open virtual mechanic chat">&#128295;</button>
+<div id="chat-panel">
+  <div class="chat-head">
+    <span class="dot"></span>
+    <span class="chat-head-title">Virtual Mechanic</span>
+    <span class="chat-head-sub" id="chat-grounding">general</span>
+  </div>
+  <div class="chat-body" id="chat-body">
+    <div class="msg assistant">Hi — ask me anything about your vehicle. If you've uploaded a report, I'll answer using its actual findings.</div>
+  </div>
+  <div class="chat-input-row">
+    <input id="chat-input" placeholder="e.g. Can I drive with this?" onkeydown="if(event.key==='Enter') sendChat();" />
+    <button class="btn-primary" onclick="sendChat()">Send</button>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:8000/api/v1';
+
+// --- device-local user id (stand-in for real auth, see backend/app/api/deps.py) ---
+function getUserId() {
+  let id = localStorage.getItem('autoexplain_user_id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('autoexplain_user_id', id);
+  }
+  return id;
+}
+
+function authHeaders(extra = {}) {
+  return { 'X-User-Id': getUserId(), ...extra };
+}
+
+let vehicles = [];
+let selectedVehicleId = null;
+let chatHistory = [];
+
+async function api(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: { ...authHeaders(), ...(options.headers || {}) },
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`${res.status}: ${detail}`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+// ---------------- Vehicles ----------------
+async function loadVehicles() {
+  try {
+    vehicles = await api('/vehicles');
+  } catch (e) {
+    console.error('Failed to load vehicles', e);
+    vehicles = [];
+  }
+  renderVehicles();
+}
+
+function renderVehicles() {
+  const row = document.getElementById('vehicle-row');
+  row.innerHTML = '';
+
+  vehicles.forEach(v => {
+    const card = document.createElement('div');
+    card.className = 'plate' + (v.id === selectedVehicleId ? ' selected' : '');
+    card.onclick = () => selectVehicle(v.id);
+    card.innerHTML = `
+      <div class="plate-reg">${v.registration_number || 'NO REG SET'}</div>
+      <div class="plate-name">${escapeHtml(v.nickname || (v.make + ' ' + v.model))}</div>
+      <div class="plate-year">${v.make} ${v.model}${v.year ? ' &middot; ' + v.year : ''}</div>
+    `;
+    row.appendChild(card);
+  });
+
+  const addCard = document.createElement('div');
+  addCard.className = 'plate-add';
+  addCard.textContent = '+ Add vehicle';
+  addCard.onclick = () => toggleAddForm(true);
+  row.appendChild(addCard);
+
+  document.getElementById('no-vehicle-empty').style.display =
+    vehicles.length === 0 ? 'block' : 'none';
+
+  if (!selectedVehicleId && vehicles.length > 0) {
+    selectVehicle(vehicles[0].id);
+  }
+}
+
+function toggleAddForm(show) {
+  document.getElementById('add-vehicle-form').style.display = show ? 'block' : 'none';
+}
+
+async function createVehicle() {
+  const make = document.getElementById('v-make').value.trim();
+  const model = document.getElementById('v-model').value.trim();
+  if (!make || !model) { alert('Make and model are required.'); return; }
+
+  const payload = {
+    make, model,
+    year: parseInt(document.getElementById('v-year').value) || null,
+    nickname: document.getElementById('v-nickname').value.trim() || null,
+    registration_number: document.getElementById('v-reg').value.trim() || null,
+  };
+
+  try {
+    const vehicle = await api('/vehicles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    toggleAddForm(false);
+    ['v-make','v-model','v-year','v-nickname','v-reg'].forEach(id => document.getElementById(id).value = '');
+    await loadVehicles();
+    selectVehicle(vehicle.id);
+  } catch (e) {
+    alert('Could not add vehicle: ' + e.message);
+  }
+}
+
+function selectVehicle(id) {
+  selectedVehicleId = id;
+  renderVehicles();
+  const v = vehicles.find(v => v.id === id);
+  document.getElementById('vehicle-workspace').style.display = v ? 'block' : 'none';
+  document.getElementById('workspace-title').textContent =
+    v ? `${v.nickname || (v.make + ' ' + v.model)} — Report` : 'Report';
+  document.getElementById('analysis-result').innerHTML = '';
+  loadHistory(id);
+}
+
+// ---------------- Upload / analyze ----------------
+const uploadZone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('file-input');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) analyzeFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) analyzeFile(fileInput.files[0]);
+});
+
+async function analyzeFile(file) {
+  if (!selectedVehicleId) { alert('Select a vehicle first.'); return; }
+
+  const statusLine = document.getElementById('status-line');
+  statusLine.className = 'status-line active';
+  statusLine.textContent = `> reading ${file.name} ... this can take 15-30s (OCR + AI analysis)`;
+
+  const form = new FormData();
+  form.append('vehicle_id', selectedVehicleId);
+  form.append('file', file);
+
+  try {
+    const result = await api('/reports/analyze', { method: 'POST', body: form });
+    statusLine.className = 'status-line';
+    renderAnalysis(result);
+    loadHistory(selectedVehicleId);
+  } catch (e) {
+    statusLine.textContent = `> failed: ${e.message}`;
+  }
+}
+
+function renderAnalysis(report) {
+  const el = document.getElementById('analysis-result');
+  const redCount = report.issues.filter(i => i.severity === 'red').length;
+
+  let html = `<div class="summary-banner">
+    <strong>${escapeHtml(report.overall_summary)}</strong>
+    ${report.extraction_confidence < 0.6 ? '<br><span style="color:var(--yellow);font-size:12px;">⚠ Low extraction confidence — the scan quality may have affected accuracy. Consider re-uploading a clearer photo.</span>' : ''}
+  </div>`;
+
+  report.issues.forEach(issue => {
+    const sev = issue.severity;
+    html += `
+    <div class="issue-card sev-${sev}">
+      <div class="issue-head">
+        <div class="issue-title">${escapeHtml(issue.title)}</div>
+        <div class="sev-pill sev-${sev}">${sev} &middot; ${issue.risk_score}/100</div>
+      </div>
+      <div class="issue-meaning">${escapeHtml(issue.meaning)}</div>
+      <div class="issue-meta">
+        <span>Can wait: <strong>${issue.can_it_wait ? 'Yes' : 'No'}</strong></span>
+        <span>Est. cost: <strong>${formatCost(issue.estimated_cost)}</strong></span>
+      </div>
+      <div class="issue-section-label">${escapeHtml(issue.urgency_note)}</div>
+      ${issue.if_ignored.length ? `<div class="issue-section-label">If ignored</div><ul class="issue-list">${issue.if_ignored.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>` : ''}
+    </div>`;
+  });
+
+  html += `<div style="font-size:11px;color:var(--text-faint);margin-top:8px;">${escapeHtml(report.disclaimer)}</div>`;
+  el.innerHTML = html;
+}
+
+function formatCost(cost) {
+  if (!cost.grounded || cost.low == null) return 'Not available yet';
+  return `₹${cost.low.toLocaleString('en-IN')} – ₹${cost.high.toLocaleString('en-IN')}`;
+}
+
+// ---------------- History ----------------
+async function loadHistory(vehicleId) {
+  const list = document.getElementById('history-list');
+  try {
+    const reports = await api(`/vehicles/${vehicleId}/reports`);
+    if (!reports.length) {
+      list.innerHTML = '<div class="empty-state">No reports analyzed yet for this vehicle.</div>';
+      return;
+    }
+    list.innerHTML = reports.map(r => `
+      <div class="history-item" onclick="viewReport('${r.id}')">
+        <span>${escapeHtml(r.filename || 'report')} — ${escapeHtml(r.overall_summary)}</span>
+        <span class="h-date">${new Date(r.created_at).toLocaleDateString()} ${r.red_count ? `&middot; ${r.red_count} urgent` : ''}</span>
+      </div>
+    `).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="empty-state">Could not load history.</div>';
+  }
+}
+
+async function viewReport(reportId) {
+  try {
+    const report = await api(`/reports/${reportId}`);
+    renderAnalysis(report);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    alert('Could not load report: ' + e.message);
+  }
+}
+
+// ---------------- Chat ----------------
+function toggleChat() {
+  document.getElementById('chat-panel').classList.toggle('open');
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
+  if (!message) return;
+  input.value = '';
+
+  appendMsg('user', message);
+  const typingEl = appendMsg('assistant', 'thinking...', true);
+
+  try {
+    const res = await api('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vehicle_id: selectedVehicleId,
+        message,
+        history: chatHistory,
+      }),
+    });
+    typingEl.remove();
+    appendMsg('assistant', res.reply);
+    document.getElementById('chat-grounding').textContent =
+      res.grounded_in_report ? 'grounded in report' : 'general knowledge';
+
+    chatHistory.push({ role: 'user', content: message });
+    chatHistory.push({ role: 'assistant', content: res.reply });
+    if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
+  } catch (e) {
+    typingEl.remove();
+    appendMsg('assistant', `Sorry, something went wrong: ${e.message}`);
+  }
+}
+
+function appendMsg(role, text, typing = false) {
+  const body = document.getElementById('chat-body');
+  const div = document.createElement('div');
+  div.className = `msg ${role}` + (typing ? ' typing' : '');
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  return div;
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str ?? '';
+  return d.innerHTML;
+}
+
+// ---------------- Init ----------------
+loadVehicles();
+</script>
+
+</body>
+</html>
