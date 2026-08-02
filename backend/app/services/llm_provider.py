@@ -72,6 +72,9 @@ class AnthropicProvider(LLMProvider):
         return "".join(
             block.text for block in response.content if block.type == "text"
         )
+
+
+class OpenAIProvider(LLMProvider):
     def __init__(self) -> None:
         from openai import OpenAI
 
@@ -84,6 +87,45 @@ class AnthropicProvider(LLMProvider):
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        raw_text = response.choices[0].message.content
+        return _safe_json_parse(raw_text)
+
+    def complete_text(
+        self, system_prompt: str, messages: list[dict[str, str]]
+    ) -> str:
+        response = self._client.chat.completions.create(
+            model=self._model,
+            messages=[{"role": "system", "content": system_prompt}, *messages],
+        )
+        return response.choices[0].message.content or ""
+
+
+class GroqProvider(LLMProvider):
+    """Free-tier option: Groq's API is OpenAI-compatible, so this reuses
+    the openai SDK with a different base_url — no new dependency needed.
+    Get a free key (no card required) at console.groq.com."""
+
+    def __init__(self) -> None:
+        from openai import OpenAI
+
+        self._client = OpenAI(
+            api_key=settings.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1"
+        )
+        self._model = settings.GROQ_MODEL
+
+    def complete_json(self, system_prompt: str, user_prompt: str) -> dict:
+        response = self._client.chat.completions.create(
+            model=self._model,
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                    + "\n\nRespond ONLY with valid JSON. No prose, no markdown fences.",
+                },
                 {"role": "user", "content": user_prompt},
             ],
         )
@@ -114,4 +156,6 @@ def _safe_json_parse(raw_text: str) -> dict:
 def get_llm_provider() -> LLMProvider:
     if settings.LLM_PROVIDER == "openai":
         return OpenAIProvider()
+    if settings.LLM_PROVIDER == "groq":
+        return GroqProvider()
     return AnthropicProvider()

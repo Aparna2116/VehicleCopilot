@@ -20,10 +20,12 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # --- LLM provider (interchangeable — see services/llm_provider.py) ---
-    LLM_PROVIDER: Literal["anthropic", "openai"] = "anthropic"
+    LLM_PROVIDER: Literal["anthropic", "openai", "groq"] = "anthropic"
     ANTHROPIC_API_KEY: str | None = None
     OPENAI_API_KEY: str | None = None
+    GROQ_API_KEY: str | None = None
     LLM_MODEL: str = "claude-sonnet-4-6"
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
     # --- OCR ---
     OCR_ENGINE: Literal["tesseract", "paddleocr"] = "tesseract"

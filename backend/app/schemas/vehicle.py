@@ -11,6 +11,8 @@ class VehicleCreate(BaseModel):
     model: str
     year: int | None = None
     registration_number: str | None = None
+    color: str | None = None
+    body_type: str | None = None
 
 
 class VehicleOut(BaseModel):
@@ -20,6 +22,8 @@ class VehicleOut(BaseModel):
     model: str
     year: int | None
     registration_number: str | None
+    color: str | None
+    body_type: str | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

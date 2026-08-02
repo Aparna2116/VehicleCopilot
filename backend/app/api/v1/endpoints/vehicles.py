@@ -39,12 +39,12 @@ def list_vehicles(
     )
 
 
-@router.delete("/{vehicle_id}", status_code=204)
+@router.delete("/{vehicle_id}", status_code=204, response_model=None)
 def delete_vehicle(
     vehicle_id: str,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> None:
+):
     vehicle = _get_owned_vehicle(vehicle_id, user, db)
     db.delete(vehicle)
     db.commit()

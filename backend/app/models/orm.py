@@ -46,6 +46,8 @@ class Vehicle(Base):
     model: Mapped[str] = mapped_column(String)
     year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     registration_number: Mapped[str | None] = mapped_column(String, nullable=True)
+    color: Mapped[str | None] = mapped_column(String, nullable=True)
+    body_type: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     owner: Mapped[User] = relationship(back_populates="vehicles")

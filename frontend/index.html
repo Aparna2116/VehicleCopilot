@@ -5,417 +5,380 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoExplain AI — Vehicle Health Copilot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #14171a;
-    --surface: #1e2227;
-    --surface-raised: #262b31;
-    --surface-hover: #2d333a;
-    --border: #33393f;
-    --text: #ecece4;
-    --text-dim: #9aa0a6;
-    --text-faint: #666d74;
-    --accent: #ff8a3d;
-    --accent-dim: #cc6f2e;
+    --bg: #050810;
+    --surface: rgba(255,255,255,0.035);
+    --surface-solid: #10151f;
+    --surface-raised: #161c29;
+    --border: rgba(255,255,255,0.09);
+    --border-strong: rgba(255,255,255,0.2);
+    --text: #eef1f7;
+    --text-dim: #99a2b3;
+    --text-faint: #5a6376;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59,130,246,0.4);
+    --accent-2: #22d3ee;
+    --accent-2-glow: rgba(34,211,238,0.3);
     --green: #4cae6d;
     --yellow: #e4b93f;
-    --orange: #ff8a3d;
-    --red: #e5484d;
+    --orange: #ff9f4d;
+    --red: #f2555b;
     --mono: 'JetBrains Mono', monospace;
     --sans: 'Inter', -apple-system, sans-serif;
+    --display: 'Space Grotesk', 'Inter', sans-serif;
+    --car-color: #3b82f6;
   }
 
-  * { box-sizing: border-box; }
-  html { -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+  ::selection { background: var(--accent); color: #050810; }
 
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
+  .ambient-bg {
+    position: fixed; inset: 0; z-index: -2;
+    background:
+      radial-gradient(ellipse 900px 550px at 12% -5%, rgba(59,130,246,0.20), transparent 60%),
+      radial-gradient(ellipse 900px 600px at 92% 5%, rgba(34,211,238,0.12), transparent 60%),
+      radial-gradient(ellipse 1200px 800px at 50% 120%, rgba(59,130,246,0.10), transparent 60%),
+      var(--bg);
   }
+  .ambient-grid {
+    position: fixed; inset: 0; z-index: -1;
+    background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 46px 46px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+    animation: gridDrift 60s linear infinite;
+  }
+  @keyframes gridDrift { from { background-position: 0 0; } to { background-position: 46px 92px; } }
+  .blob { position: fixed; border-radius: 50%; filter: blur(90px); z-index: -1; opacity: 0.5; pointer-events:none; }
+  .blob-1 { width: 480px; height: 480px; background: var(--accent-glow); top: -10%; left: -8%; animation: floatSlow 22s ease-in-out infinite; }
+  .blob-2 { width: 420px; height: 420px; background: var(--accent-2-glow); top: 30%; right: -10%; animation: floatSlow 26s ease-in-out infinite reverse; }
+  @keyframes floatSlow { 0%,100% { transform: translate(0,0); } 50% { transform: translate(30px,-40px); } }
 
-  ::selection { background: var(--accent); color: #14171a; }
-
-  /* ---------------- Header ---------------- */
   header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 28px;
+    display: flex; align-items: center; justify-content: space-between; padding: 18px 32px;
+    position: sticky; top: 0; z-index: 50; background: rgba(5,8,16,0.72); backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: rgba(20,23,26,0.92);
-    backdrop-filter: blur(8px);
-    z-index: 10;
   }
-  .logo {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-  .logo-mark {
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: 15px;
-    color: var(--accent);
-    letter-spacing: 0.02em;
-    border: 1px solid var(--accent);
-    padding: 3px 7px;
-    border-radius: 4px;
-  }
-  .logo-text { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
-  .tagline { font-size: 12px; color: var(--text-faint); font-family: var(--mono); }
+  .logo { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .logo-mark { font-family: var(--mono); font-weight: 800; font-size: 14px; color: #050810; background: var(--accent); padding: 5px 8px; border-radius: 5px; box-shadow: 0 0 20px var(--accent-glow); }
+  .logo-text { font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+  .breadcrumb { font-family: var(--mono); font-size: 12px; color: var(--text-faint); display: flex; align-items: center; gap: 8px; }
+  .breadcrumb .sep { opacity: 0.4; }
+  .breadcrumb .current { color: var(--accent); }
+  nav { display: flex; gap: 10px; align-items: center; }
+  .nav-btn { font-family: var(--mono); font-size: 12px; color: var(--text-dim); background: none; border: 1px solid transparent; padding: 7px 12px; border-radius: 7px; cursor: pointer; transition: all .15s; }
+  .nav-btn:hover { color: var(--accent); border-color: var(--border); }
 
-  main { max-width: 1080px; margin: 0 auto; padding: 32px 24px 120px; }
+  .page { display: none; }
+  .page.active { display: block; animation: pageIn .5s ease; }
+  @keyframes pageIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
-  h2 {
-    font-size: 13px;
-    font-family: var(--mono);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    margin: 0 0 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  h2::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--accent);
-    border-radius: 1px;
-  }
+  section { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  .section-pad { padding: 70px 24px 90px; }
 
-  /* ---------------- Vehicle plate cards ---------------- */
-  .vehicle-row {
-    display: flex;
-    gap: 14px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    margin-bottom: 36px;
-  }
-  .plate {
-    flex: 0 0 auto;
-    width: 200px;
-    background: #f0ede4;
-    color: #14171a;
-    border-radius: 6px;
-    padding: 14px 16px 12px;
-    cursor: pointer;
-    border: 3px solid transparent;
-    transition: transform .15s ease, border-color .15s ease;
-    position: relative;
-    font-family: var(--mono);
-  }
-  .plate:hover { transform: translateY(-2px); }
-  .plate.selected { border-color: var(--accent); }
-  .plate::before {
-    content: '';
-    position: absolute; left: 0; top: 0; bottom: 0;
-    width: 6px;
-    background: linear-gradient(180deg,#ff9933 0%,#ff9933 33%,#fff 33%,#fff 66%,#138808 66%);
-    border-radius: 6px 0 0 6px;
-  }
-  .plate-reg { font-size: 11px; color: #6b6558; letter-spacing: 0.05em; }
-  .plate-name { font-size: 18px; font-weight: 700; margin-top: 4px; line-height: 1.2; }
-  .plate-year { font-size: 12px; color: #6b6558; margin-top: 2px; }
-  .plate-badge {
-    position: absolute; top: 10px; right: 10px;
-    font-size: 9px; padding: 2px 6px; border-radius: 3px;
-    font-weight: 700; text-transform: uppercase;
-  }
+  .eyebrow { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .eyebrow::before { content:''; width: 22px; height: 1px; background: var(--accent); }
+  h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: -0.02em; }
 
-  .plate-add {
-    flex: 0 0 auto;
-    width: 200px;
-    border: 2px dashed var(--border);
-    border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--text-faint);
-    cursor: pointer;
-    font-family: var(--mono);
-    font-size: 13px;
-    transition: border-color .15s, color .15s;
-  }
-  .plate-add:hover { border-color: var(--accent); color: var(--accent); }
+  /* ---------------- Landing ---------------- */
+  .hero { padding-top: 70px; padding-bottom: 60px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center; min-height: 84vh; }
+  .hero h1 { font-size: clamp(38px, 5.2vw, 64px); line-height: 1.04; margin-bottom: 20px; }
+  .hero h1 .accent { color: var(--accent); }
+  .hero p.lede { font-size: 17px; color: var(--text-dim); max-width: 480px; line-height: 1.6; margin-bottom: 30px; }
+  .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn { font-family: var(--sans); font-weight: 700; font-size: 14px; border: none; border-radius: 8px; padding: 13px 22px; cursor: pointer; transition: transform .15s, box-shadow .2s, opacity .15s; display: inline-flex; align-items: center; gap: 8px; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: #050810; }
+  .btn-primary:hover { box-shadow: 0 8px 26px var(--accent-glow); transform: translateY(-1px); }
+  .btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { padding: 9px 14px; font-size: 13px; }
+  .hero-stats { display: flex; gap: 26px; margin-top: 36px; }
+  .hero-stat .n { font-size: 22px; font-weight: 700; font-family: var(--mono); }
+  .hero-stat .l { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
 
-  /* ---------------- Add vehicle form ---------------- */
-  .form-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 36px;
-  }
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 100px;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-  input, textarea {
-    background: var(--surface-raised);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 12px;
-    border-radius: 6px;
-    font-family: var(--sans);
-    font-size: 14px;
-    width: 100%;
-  }
-  input:focus, textarea:focus, button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-  }
+  .scan-rig { position: relative; aspect-ratio: 1/0.85; border-radius: 20px; background: linear-gradient(180deg, var(--surface), transparent); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; perspective: 900px; }
+  .scan-rig::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(34,211,238,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.06) 1px, transparent 1px); background-size: 24px 24px; }
+  .scan-line { position: absolute; left: 6%; right: 6%; height: 2px; background: linear-gradient(90deg, transparent, var(--accent-2), transparent); box-shadow: 0 0 16px 2px var(--accent-2-glow); animation: scanMove 3.2s ease-in-out infinite; z-index: 3; }
+  @keyframes scanMove { 0%,100% { top: 14%; } 50% { top: 84%; } }
+  .scan-corner { position: absolute; width: 22px; height: 22px; border: 2px solid var(--accent-2); opacity: 0.7; z-index: 3; }
+  .scan-corner.tl { top: 14px; left: 14px; border-right:0; border-bottom:0; }
+  .scan-corner.tr { top: 14px; right: 14px; border-left:0; border-bottom:0; }
+  .scan-corner.bl { bottom: 14px; left: 14px; border-right:0; border-top:0; }
+  .scan-corner.br { bottom: 14px; right: 14px; border-left:0; border-top:0; }
+  .scan-tag { position: absolute; bottom: 16px; left: 16px; font-family: var(--mono); font-size: 11px; color: var(--accent-2); background: rgba(5,8,16,0.7); padding: 4px 9px; border-radius: 4px; border: 1px solid rgba(34,211,238,0.3); z-index: 3; }
+
+  /* ---------------- 3D vehicle rig (shared) ---------------- */
+  .rig-3d { width: 80%; transform-style: preserve-3d; position: relative; z-index: 2; }
+  .rig-3d svg { width: 100%; display: block; filter: drop-shadow(0 0 22px var(--car-color)); transition: filter .3s; }
+  .idle-spin { animation: idleTurntable 7s ease-in-out infinite; }
+  @keyframes idleTurntable { 0%,100% { transform: rotateY(-7deg) rotateX(1deg); } 50% { transform: rotateY(7deg) rotateX(-1deg); } }
+  .wheel-rim { transform-box: fill-box; transform-origin: center; animation: wheelSpin 2s linear infinite; }
+  @keyframes wheelSpin { to { transform: rotate(360deg); } }
+
+  /* ---------------- Steps / configurator ---------------- */
+  .section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; flex-wrap: wrap; gap: 12px; }
+  .section-head h2 { font-size: clamp(26px, 3.4vw, 34px); }
+  .section-sub { color: var(--text-dim); font-size: 14px; max-width: 440px; }
+
+  .category-toggle { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 26px; gap: 4px; }
+  .category-toggle button { font-family: var(--mono); font-size: 13px; font-weight: 600; border: none; background: none; color: var(--text-faint); padding: 9px 18px; border-radius: 7px; cursor: pointer; transition: all .18s; }
+  .category-toggle button.active { background: var(--accent); color: #050810; }
+
+  .configurator { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 32px; backdrop-filter: blur(10px); }
+  .config-form label { display: block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); margin-bottom: 7px; margin-top: 18px; }
+  .config-form label:first-child { margin-top: 0; }
+  select, input { width: 100%; background: var(--surface-raised); border: 1px solid var(--border-strong); color: var(--text); padding: 11px 13px; border-radius: 8px; font-family: var(--sans); font-size: 14px; transition: border-color .15s; }
+  select:focus, input:focus, button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 1px; border-color: var(--accent-2); }
+  select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2399a2b3' stroke-width='1.6' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 34px; }
   ::placeholder { color: var(--text-faint); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .color-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .swatch { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform .15s, border-color .15s; }
+  .swatch:hover { transform: scale(1.12); }
+  .swatch.selected { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,0.15); }
+  .swatch-label { font-size: 12px; color: var(--text-dim); margin-top: 8px; font-family: var(--mono); }
 
-  button {
-    font-family: var(--sans);
-    font-weight: 600;
-    font-size: 14px;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 18px;
-    cursor: pointer;
-    transition: opacity .15s, transform .1s;
-  }
-  button:active { transform: scale(0.98); }
-  .btn-primary { background: var(--accent); color: #14171a; }
-  .btn-primary:hover { opacity: 0.9; }
-  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
-  .btn-ghost:hover { color: var(--text); border-color: var(--text-dim); }
+  .config-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 14px; background: radial-gradient(ellipse at center, rgba(255,255,255,0.03), transparent 70%); padding: 20px; position: relative; min-height: 260px; perspective: 900px; cursor: grab; }
+  .config-preview:active { cursor: grabbing; }
+  .preview-name { font-family: var(--display); font-weight: 700; font-size: 19px; margin-top: 12px; text-align: center; }
+  .preview-sub { font-family: var(--mono); font-size: 12px; color: var(--text-faint); margin-top: 3px; }
+  .preview-hint { font-family: var(--mono); font-size: 10px; color: var(--text-faint); margin-top: 10px; opacity: 0.7; }
 
-  /* ---------------- Upload zone ---------------- */
-  .upload-zone {
-    border: 2px dashed var(--border);
-    border-radius: 10px;
-    padding: 36px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
-    margin-bottom: 36px;
-  }
-  .upload-zone:hover, .upload-zone.dragover {
-    border-color: var(--accent);
-    background: rgba(255,138,61,0.05);
-  }
-  .upload-zone .upload-icon { font-size: 28px; margin-bottom: 8px; }
-  .upload-zone .upload-title { font-weight: 600; margin-bottom: 4px; }
-  .upload-zone .upload-sub { font-size: 13px; color: var(--text-faint); }
+  /* ---------------- Garage grid ---------------- */
+  .garage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 34px; }
+  .plate { background: var(--surface-solid); border: 1px solid var(--border); border-radius: 14px; padding: 18px; cursor: pointer; transition: all .18s ease; position: relative; }
+  .plate:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 10px 26px rgba(59,130,246,0.12); }
+  .plate-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .plate-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); flex-shrink: 0; }
+  .plate-reg { font-family: var(--mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; }
+  .plate-name { font-family: var(--display); font-weight: 700; font-size: 17px; margin-bottom: 2px; }
+  .plate-meta { font-size: 12px; color: var(--text-dim); font-family: var(--mono); }
+  .plate-arrow { position: absolute; top: 16px; right: 16px; color: var(--text-faint); font-size: 16px; transition: transform .18s, color .18s; }
+  .plate:hover .plate-arrow { transform: translateX(3px); color: var(--accent); }
+  .empty-state { text-align: center; padding: 44px 20px; color: var(--text-faint); font-size: 14px; font-family: var(--mono); }
 
-  .status-line {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--accent);
-    margin-bottom: 20px;
-    display: none;
-  }
-  .status-line.active { display: block; }
+  /* ---------------- Vehicle workspace page ---------------- */
+  .vhero { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; padding: 20px 0 50px; }
+  .vhero-rig { aspect-ratio: 1/0.75; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; perspective: 1000px; cursor: grab; }
+  .vhero-rig:active { cursor: grabbing; }
+  .back-btn { font-family: var(--mono); font-size: 12px; color: var(--text-dim); background: none; border: 1px solid var(--border); padding: 7px 13px; border-radius: 7px; cursor: pointer; margin-bottom: 22px; display: inline-flex; align-items: center; gap: 6px; transition: all .15s; }
+  .back-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* ---------------- Report / issue cards ---------------- */
-  .summary-banner {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: 8px;
-    padding: 16px 18px;
-    margin-bottom: 20px;
-    font-size: 14px;
-  }
-  .issue-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 20px;
-    margin-bottom: 14px;
-    border-left: 4px solid var(--border);
-  }
-  .issue-card.sev-green { border-left-color: var(--green); }
-  .issue-card.sev-yellow { border-left-color: var(--yellow); }
-  .issue-card.sev-orange { border-left-color: var(--orange); }
-  .issue-card.sev-red { border-left-color: var(--red); }
+  .upload-zone { border: 2px dashed var(--border-strong); border-radius: 16px; padding: 44px 20px; text-align: center; cursor: pointer; transition: all .2s; margin-bottom: 24px; background: var(--surface); }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: rgba(59,130,246,0.06); }
+  .upload-icon { font-size: 30px; margin-bottom: 10px; }
+  .upload-title { font-weight: 700; margin-bottom: 4px; font-family: var(--display); }
+  .upload-sub { font-size: 13px; color: var(--text-faint); }
+  .status-line { font-family: var(--mono); font-size: 12px; color: var(--accent-2); margin-bottom: 20px; display: none; align-items: center; gap: 8px; }
+  .status-line.active { display: flex; }
+  .status-line.active::before { content:''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-2); animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: 0.3; } }
 
-  .issue-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-  .issue-title { font-size: 16px; font-weight: 700; }
-  .sev-pill {
-    font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 3px 8px;
-    border-radius: 10px;
-    white-space: nowrap;
-  }
-  .sev-pill.sev-green { background: rgba(76,174,109,0.15); color: var(--green); }
-  .sev-pill.sev-yellow { background: rgba(228,185,63,0.15); color: var(--yellow); }
-  .sev-pill.sev-orange { background: rgba(255,138,61,0.15); color: var(--orange); }
-  .sev-pill.sev-red { background: rgba(229,72,77,0.15); color: var(--red); }
-
-  .issue-meaning { color: var(--text); line-height: 1.55; margin-bottom: 10px; }
-  .issue-meta { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--text-dim); margin-bottom: 10px; }
+  .summary-banner { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; font-size: 14px; }
+  .issue-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin-bottom: 14px; border-left: 4px solid var(--border); }
+  .issue-card.sev-green { border-left-color: var(--green); } .issue-card.sev-yellow { border-left-color: var(--yellow); }
+  .issue-card.sev-orange { border-left-color: var(--orange); } .issue-card.sev-red { border-left-color: var(--red); }
+  .issue-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+  .issue-title { font-family: var(--display); font-size: 17px; font-weight: 700; }
+  .sev-pill { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 10px; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  .sev-pill::before { content:''; width: 6px; height: 6px; border-radius: 50%; }
+  .sev-pill.sev-green { background: rgba(76,174,109,0.15); color: var(--green); } .sev-pill.sev-green::before { background: var(--green); }
+  .sev-pill.sev-yellow { background: rgba(228,185,63,0.15); color: var(--yellow); } .sev-pill.sev-yellow::before { background: var(--yellow); }
+  .sev-pill.sev-orange { background: rgba(255,159,77,0.15); color: var(--orange); } .sev-pill.sev-orange::before { background: var(--orange); }
+  .sev-pill.sev-red { background: rgba(242,85,91,0.15); color: var(--red); } .sev-pill.sev-red::before { background: var(--red); animation: pulse 1.2s infinite; }
+  .issue-meaning { line-height: 1.6; margin-bottom: 12px; }
+  .issue-meta { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; color: var(--text-dim); margin-bottom: 10px; }
   .issue-meta strong { color: var(--text); font-family: var(--mono); font-weight: 500; }
   .issue-list { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text-dim); }
-  .issue-list li { margin-bottom: 3px; }
-  .issue-section-label { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin: 10px 0 4px; }
-
-  /* ---------------- History ---------------- */
-  .history-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    font-size: 13px;
-  }
+  .issue-list li { margin-bottom: 4px; }
+  .issue-section-label { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin: 12px 0 5px; }
+  .history-item { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; cursor: pointer; font-size: 13px; transition: border-color .15s; }
   .history-item:hover { border-color: var(--accent); }
-  .history-item .h-date { font-family: var(--mono); color: var(--text-faint); }
+  .h-date { font-family: var(--mono); color: var(--text-faint); }
 
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-faint);
-    font-size: 14px;
-  }
+  footer { padding: 50px 24px; text-align: center; color: var(--text-faint); font-size: 12px; font-family: var(--mono); border-top: 1px solid var(--border); margin-top: 20px; }
 
-  /* ---------------- Chat (virtual mechanic) ---------------- */
-  #chat-toggle {
-    position: fixed;
-    bottom: 24px; right: 24px;
-    background: var(--accent);
-    color: #14171a;
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 4px 16px rgba(255,138,61,0.35);
-    z-index: 20;
-    border: none;
-    cursor: pointer;
-  }
-  #chat-panel {
-    position: fixed;
-    bottom: 92px; right: 24px;
-    width: 380px;
-    max-width: calc(100vw - 32px);
-    height: 520px;
-    max-height: calc(100vh - 140px);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    display: none;
-    flex-direction: column;
-    overflow: hidden;
-    z-index: 20;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-  }
+  #chat-toggle { position: fixed; bottom: 26px; right: 26px; background: var(--accent); color: #050810; width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 6px 24px var(--accent-glow); z-index: 60; border: none; cursor: pointer; transition: transform .2s; }
+  #chat-toggle:hover { transform: scale(1.06) rotate(-6deg); }
+  #chat-panel { position: fixed; bottom: 96px; right: 26px; width: 390px; max-width: calc(100vw - 32px); height: 530px; max-height: calc(100vh - 150px); background: var(--surface-solid); border: 1px solid var(--border-strong); border-radius: 16px; display: none; flex-direction: column; overflow: hidden; z-index: 60; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
   #chat-panel.open { display: flex; }
-  .chat-head {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 8px;
-  }
-  .chat-head .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-  .chat-head-title { font-weight: 700; font-size: 14px; }
+  .chat-head { padding: 15px 17px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
+  .chat-head .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .chat-head-title { font-weight: 700; font-size: 14px; font-family: var(--display); }
   .chat-head-sub { font-size: 11px; color: var(--text-faint); font-family: var(--mono); margin-left: auto; }
-
-  .chat-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .msg { max-width: 85%; padding: 9px 12px; border-radius: 10px; font-size: 13.5px; line-height: 1.5; }
-  .msg.user { align-self: flex-end; background: var(--accent); color: #14171a; border-bottom-right-radius: 2px; }
-  .msg.assistant { align-self: flex-start; background: var(--surface-raised); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+  .chat-body { flex: 1; overflow-y: auto; padding: 15px 17px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 85%; padding: 10px 13px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }
+  .msg.user { align-self: flex-end; background: var(--accent); color: #050810; border-bottom-right-radius: 3px; font-weight: 500; }
+  .msg.assistant { align-self: flex-start; background: var(--surface-raised); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
   .msg.typing { color: var(--text-faint); font-style: italic; }
-
-  .chat-input-row {
-    display: flex;
-    gap: 8px;
-    padding: 12px;
-    border-top: 1px solid var(--border);
-  }
+  .chat-input-row { display: flex; gap: 8px; padding: 13px; border-top: 1px solid var(--border); }
   .chat-input-row input { flex: 1; }
-  .chat-input-row button { padding: 10px 14px; }
+  .chat-input-row button { padding: 11px 15px; }
 
-  @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
-  }
+  @media (prefers-reduced-motion: reduce) { *, .idle-spin, .wheel-rim { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
 
-  @media (max-width: 640px) {
-    .form-grid { grid-template-columns: 1fr; }
-    #chat-panel { right: 16px; bottom: 84px; }
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; padding-top: 20px; }
+    .configurator, .vhero { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .breadcrumb { display: none; }
   }
 </style>
 </head>
 <body>
 
+<div class="ambient-bg"></div>
+<div class="ambient-grid"></div>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
 <header>
-  <div class="logo">
+  <div class="logo" onclick="goToPage('landing')">
     <span class="logo-mark">AX</span>
     <span class="logo-text">AutoExplain AI</span>
   </div>
-  <span class="tagline">understand your vehicle, not just your bill</span>
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <nav>
+    <button class="nav-btn" onclick="goToPage('garage')">Garage</button>
+    <button class="nav-btn" onclick="toggleChat()">Ask a mechanic</button>
+  </nav>
 </header>
 
-<main>
-  <section>
-    <h2>Your vehicles</h2>
-    <div class="vehicle-row" id="vehicle-row"></div>
-  </section>
-
-  <section id="add-vehicle-form" class="form-card" style="display:none;">
-    <div class="form-grid">
-      <input id="v-make" placeholder="Make (e.g. Maruti Suzuki)" />
-      <input id="v-model" placeholder="Model (e.g. WagonR)" />
-      <input id="v-year" placeholder="Year" type="number" />
+<!-- ============ PAGE 1: LANDING ============ -->
+<div class="page active" id="page-landing">
+  <section class="hero">
+    <div>
+      <div class="eyebrow">vehicle health copilot</div>
+      <h1>Understand your ride<br>like a <span class="accent">mechanic would</span>.</h1>
+      <p class="lede">Upload any service, inspection, or diagnostic report. AutoExplain AI decodes the jargon, flags what's urgent, estimates fair cost, and lets you ask follow-up questions to a virtual mechanic — grounded in your actual report. Cars, bikes, scooters — all of it.</p>
+      <div class="hero-ctas">
+        <button class="btn btn-primary" onclick="goToPage('garage')">Enter your garage &rarr;</button>
+        <button class="btn btn-ghost" onclick="toggleChat()">Ask the virtual mechanic</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="n">0 jargon</div><div class="l">plain-english only</div></div>
+        <div class="hero-stat"><div class="n">4 tiers</div><div class="l">urgency severity</div></div>
+        <div class="hero-stat"><div class="n">&#8377; grounded</div><div class="l">cost estimates</div></div>
+      </div>
     </div>
-    <div class="form-grid">
-      <input id="v-nickname" placeholder="Nickname (optional)" />
-      <input id="v-reg" placeholder="Registration number (optional)" />
+    <div class="scan-rig" id="scan-rig">
+      <div class="scan-corner tl"></div><div class="scan-corner tr"></div>
+      <div class="scan-corner bl"></div><div class="scan-corner br"></div>
+      <div class="scan-line"></div>
+      <div class="scan-tag">&#9679; ANALYZING VEHICLE</div>
+      <div class="rig-3d idle-spin" id="hero-rig"><svg viewBox="0 0 420 180" id="hero-car"></svg></div>
     </div>
-    <button class="btn-primary" onclick="createVehicle()">Add vehicle</button>
-    <button class="btn-ghost" onclick="toggleAddForm(false)" style="margin-left:8px;">Cancel</button>
   </section>
+</div>
 
-  <section id="vehicle-workspace" style="display:none;">
-    <h2 id="workspace-title">Report</h2>
+<!-- ============ PAGE 2: GARAGE (configurator + vehicle list) ============ -->
+<div class="page" id="page-garage">
+  <section class="section-pad">
+    <div class="eyebrow">your garage</div>
+    <div class="section-head">
+      <div>
+        <h2>Add a vehicle</h2>
+        <p class="section-sub">Pick a category, then make and model — even if you don't know the technical bits, we do. Color's just for fun, totally optional.</p>
+      </div>
+    </div>
 
+    <div class="category-toggle">
+      <button class="active" id="cat-car" onclick="setCategory('car')">&#128663; Car</button>
+      <button id="cat-bike" onclick="setCategory('bike')">&#127949; Two-Wheeler</button>
+    </div>
+
+    <div class="configurator">
+      <div class="config-form">
+        <label>Make</label>
+        <select id="cf-make" onchange="onMakeChange()"></select>
+        <div class="form-row">
+          <div>
+            <label>Model</label>
+            <select id="cf-model" onchange="onModelChange()"></select>
+          </div>
+          <div>
+            <label>Year (optional)</label>
+            <input id="cf-year" type="number" placeholder="2022" min="1980" max="2027">
+          </div>
+        </div>
+        <label>Color <span style="color:var(--text-faint); text-transform:none; letter-spacing:0;">— optional</span></label>
+        <div class="color-row" id="cf-colors"></div>
+        <div class="swatch-label" id="cf-color-label">No color selected</div>
+        <div class="form-row">
+          <div>
+            <label>Nickname (optional)</label>
+            <input id="cf-nickname" placeholder="e.g. Office ride">
+          </div>
+          <div>
+            <label>Registration (optional)</label>
+            <input id="cf-reg" placeholder="KL 01 AB 1234">
+          </div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:22px; width:100%; justify-content:center;" onclick="createVehicle()">Add to garage</button>
+      </div>
+
+      <div class="config-preview" id="config-preview-wrap">
+        <div class="rig-3d idle-spin" id="preview-rig"><svg viewBox="0 0 420 180" id="preview-car"></svg></div>
+        <div class="preview-name" id="preview-name">Pick a make to start</div>
+        <div class="preview-sub" id="preview-sub"></div>
+        <div class="preview-hint">drag to rotate</div>
+      </div>
+    </div>
+
+    <div class="section-head" style="margin-top:50px;">
+      <div>
+        <h2 style="font-size:22px;">Your vehicles</h2>
+        <p class="section-sub">Click one to diagnose a report or ask about it.</p>
+      </div>
+    </div>
+    <div class="garage-grid" id="vehicle-row"></div>
+    <div class="empty-state" id="no-vehicle-empty" style="display:none;">Your garage is empty — add your first vehicle above.</div>
+  </section>
+</div>
+
+<!-- ============ PAGE 3: VEHICLE WORKSPACE ============ -->
+<div class="page" id="page-vehicle">
+  <section class="section-pad">
+    <button class="back-btn" onclick="goToPage('garage')">&larr; Back to garage</button>
+
+    <div class="vhero">
+      <div>
+        <div class="eyebrow" id="v-eyebrow">vehicle</div>
+        <h1 style="font-size:clamp(28px,4vw,42px); margin-bottom:10px;" id="v-title">—</h1>
+        <p class="section-sub" id="v-sub" style="max-width:400px;"></p>
+      </div>
+      <div class="vhero-rig" id="vhero-rig-wrap">
+        <div class="rig-3d idle-spin" id="vhero-rig"><svg viewBox="0 0 420 180" id="vhero-car"></svg></div>
+      </div>
+    </div>
+
+    <div class="eyebrow">diagnose</div>
+    <div class="section-head">
+      <div>
+        <h2 style="font-size:24px;">Upload a report</h2>
+        <p class="section-sub">Drop in a service, inspection, or diagnostic report. We'll OCR it, explain every finding in plain English, and rank what actually needs attention.</p>
+      </div>
+    </div>
     <div class="upload-zone" id="upload-zone">
       <div class="upload-icon">&#128196;</div>
       <div class="upload-title">Drop a report here, or click to upload</div>
       <div class="upload-sub">PDF, JPG, PNG, HEIC &middot; service, inspection, or diagnostic reports</div>
-      <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.heic" style="display:none;" />
+      <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.heic" style="display:none;">
     </div>
     <div class="status-line" id="status-line"></div>
-
     <div id="analysis-result"></div>
 
-    <h2 style="margin-top:32px;">Report history</h2>
+    <div class="eyebrow" style="margin-top:50px;">history</div>
+    <h2 style="font-size:22px; margin-bottom:18px;">Report history</h2>
     <div id="history-list"><div class="empty-state">No reports analyzed yet for this vehicle.</div></div>
   </section>
+</div>
 
-  <div id="no-vehicle-empty" class="empty-state">
-    Add your first vehicle above to get started.
-  </div>
-</main>
+<footer>AutoExplain AI &middot; informational only, not a substitute for professional inspection</footer>
 
 <button id="chat-toggle" onclick="toggleChat()" aria-label="Open virtual mechanic chat">&#128295;</button>
 <div id="chat-panel">
@@ -428,149 +391,327 @@
     <div class="msg assistant">Hi — ask me anything about your vehicle. If you've uploaded a report, I'll answer using its actual findings.</div>
   </div>
   <div class="chat-input-row">
-    <input id="chat-input" placeholder="e.g. Can I drive with this?" onkeydown="if(event.key==='Enter') sendChat();" />
-    <button class="btn-primary" onclick="sendChat()">Send</button>
+    <input id="chat-input" placeholder="e.g. Can I ride/drive with this?" onkeydown="if(event.key==='Enter') sendChat();">
+    <button class="btn btn-primary btn-sm" onclick="sendChat()">Send</button>
   </div>
 </div>
 
 <script>
 const API_BASE = 'http://localhost:8000/api/v1';
 
-// --- device-local user id (stand-in for real auth, see backend/app/api/deps.py) ---
-function getUserId() {
-  let id = localStorage.getItem('autoexplain_user_id');
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem('autoexplain_user_id', id);
+/* =========================================================
+   Blueprint-style vehicle silhouettes, recolored live via
+   --car-color. Line art, not photos -- nothing to license,
+   and it fits the "we diagnose your vehicle" concept.
+   Inner rim circles carry .wheel-rim for the spin animation.
+   ========================================================= */
+const VEHICLE_SVGS = {
+  hatchback: `
+    <path d="M35,138 C35,138 38,108 55,95 L95,60 C110,46 130,38 155,36 L235,36 C258,38 275,48 285,62 L300,88 C330,90 355,100 372,118 L378,138 Z" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <path d="M108,60 C120,48 138,42 158,41 L228,41 C246,42 258,50 266,62 L272,80 L118,80 Z" fill="var(--car-color)" fill-opacity="0.08" stroke="var(--car-color)" stroke-width="2"/>
+    <line x1="190" y1="80" x2="190" y2="136" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <line x1="10" y1="138" x2="405" y2="138" stroke="var(--car-color)" stroke-width="1" opacity="0.3" stroke-dasharray="3 4"/>
+    <circle cx="100" cy="138" r="26" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="100" cy="138" r="10" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <circle cx="315" cy="138" r="26" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="315" cy="138" r="10" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+  `,
+  sedan: `
+    <path d="M28,138 C28,138 32,110 48,96 L83,64 C98,50 118,42 143,40 L203,40 C220,40 230,46 238,58 L250,76 L298,80 C318,82 333,90 348,102 C366,108 380,118 386,138 Z" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <path d="M98,64 C110,52 126,45 146,44 L198,44 C212,45 220,50 226,60 L232,76 L110,76 Z" fill="var(--car-color)" fill-opacity="0.08" stroke="var(--car-color)" stroke-width="2"/>
+    <line x1="178" y1="76" x2="178" y2="136" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <line x1="10" y1="138" x2="405" y2="138" stroke="var(--car-color)" stroke-width="1" opacity="0.3" stroke-dasharray="3 4"/>
+    <circle cx="95" cy="138" r="25" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="95" cy="138" r="9" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <circle cx="345" cy="138" r="25" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="345" cy="138" r="9" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+  `,
+  suv: `
+    <path d="M30,150 C30,150 33,115 51,98 L88,55 C104,38 126,28 153,26 L243,26 C264,28 280,38 290,52 L303,72 C333,75 356,85 373,100 C388,112 394,128 394,150 Z" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <path d="M106,55 C120,40 138,32 158,31 L236,31 C252,32 262,40 268,52 L274,70 L116,70 Z" fill="var(--car-color)" fill-opacity="0.08" stroke="var(--car-color)" stroke-width="2"/>
+    <line x1="196" y1="70" x2="196" y2="148" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <line x1="8" y1="150" x2="404" y2="150" stroke="var(--car-color)" stroke-width="1" opacity="0.3" stroke-dasharray="3 4"/>
+    <circle cx="100" cy="150" r="30" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="100" cy="150" r="11" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <circle cx="330" cy="150" r="30" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="330" cy="150" r="11" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+  `,
+  muv: `
+    <path d="M30,140 L30,80 C30,60 42,44 62,40 L340,40 C365,44 380,62 385,85 L385,140 Z" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <path d="M50,44 L340,44 L340,72 L50,72 Z" fill="var(--car-color)" fill-opacity="0.08" stroke="var(--car-color)" stroke-width="2"/>
+    <line x1="145" y1="44" x2="145" y2="138" stroke="var(--car-color)" stroke-width="1.5" opacity="0.5"/>
+    <line x1="245" y1="44" x2="245" y2="138" stroke="var(--car-color)" stroke-width="1.5" opacity="0.5"/>
+    <line x1="8" y1="140" x2="404" y2="140" stroke="var(--car-color)" stroke-width="1" opacity="0.3" stroke-dasharray="3 4"/>
+    <circle cx="95" cy="140" r="26" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="95" cy="140" r="10" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <circle cx="330" cy="140" r="26" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="330" cy="140" r="10" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+  `,
+  motorcycle: `
+    <line x1="8" y1="140" x2="404" y2="140" stroke="var(--car-color)" stroke-width="1" opacity="0.3" stroke-dasharray="3 4"/>
+    <circle cx="105" cy="140" r="32" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="105" cy="140" r="12" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <circle cx="305" cy="140" r="32" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="305" cy="140" r="12" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <line x1="105" y1="140" x2="148" y2="72" stroke="var(--car-color)" stroke-width="3"/>
+    <line x1="138" y1="77" x2="166" y2="66" stroke="var(--car-color)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M150,96 C160,80 180,70 205,70 L235,72 C250,74 258,82 258,95 L258,108 L150,108 Z" fill="var(--car-color)" fill-opacity="0.08" stroke="var(--car-color)" stroke-width="2.5"/>
+    <line x1="258" y1="100" x2="305" y2="140" stroke="var(--car-color)" stroke-width="3"/>
+    <rect x="175" y="108" width="45" height="26" rx="3" fill="none" stroke="var(--car-color)" stroke-width="2"/>
+    <path d="M220,128 L288,132" stroke="var(--car-color)" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+  `,
+  scooter: `
+    <line x1="8" y1="140" x2="404" y2="140" stroke="var(--car-color)" stroke-width="1" opacity="0.3" stroke-dasharray="3 4"/>
+    <circle cx="112" cy="142" r="24" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="112" cy="142" r="9" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <circle cx="298" cy="142" r="24" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <circle class="wheel-rim" cx="298" cy="142" r="9" fill="none" stroke="var(--car-color)" stroke-width="1.5" opacity="0.6"/>
+    <path d="M112,142 L114,80 C115,68 124,60 137,60 L148,60" fill="none" stroke="var(--car-color)" stroke-width="3"/>
+    <line x1="120" y1="62" x2="152" y2="55" stroke="var(--car-color)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="142" y1="118" x2="228" y2="118" stroke="var(--car-color)" stroke-width="3"/>
+    <path d="M225,100 C240,96 262,97 276,103 C290,108 298,120 298,132 L298,142 L228,142 L228,118 Z" fill="var(--car-color)" fill-opacity="0.08" stroke="var(--car-color)" stroke-width="2.5"/>
+  `
+};
+
+const CATEGORY_DB = {
+  car: {
+    "Maruti Suzuki": [ {model:"WagonR", type:"hatchback"}, {model:"Swift", type:"hatchback"}, {model:"Baleno", type:"hatchback"}, {model:"Dzire", type:"sedan"}, {model:"Ertiga", type:"muv"}, {model:"Brezza", type:"suv"} ],
+    "Hyundai": [ {model:"Grand i10 Nios", type:"hatchback"}, {model:"i20", type:"hatchback"}, {model:"Verna", type:"sedan"}, {model:"Creta", type:"suv"}, {model:"Venue", type:"suv"} ],
+    "Tata": [ {model:"Tiago", type:"hatchback"}, {model:"Tigor", type:"sedan"}, {model:"Nexon", type:"suv"}, {model:"Punch", type:"suv"}, {model:"Safari", type:"suv"} ],
+    "Honda": [ {model:"City", type:"sedan"}, {model:"Amaze", type:"sedan"}, {model:"Elevate", type:"suv"} ],
+    "Toyota": [ {model:"Glanza", type:"hatchback"}, {model:"Innova Crysta", type:"muv"}, {model:"Fortuner", type:"suv"}, {model:"Urban Cruiser Hyryder", type:"suv"} ],
+    "Mahindra": [ {model:"XUV700", type:"suv"}, {model:"Scorpio-N", type:"suv"}, {model:"Bolero", type:"suv"}, {model:"Thar", type:"suv"} ],
+    "Kia": [ {model:"Seltos", type:"suv"}, {model:"Sonet", type:"suv"}, {model:"Carens", type:"muv"} ],
+    "Renault": [ {model:"Kwid", type:"hatchback"}, {model:"Triber", type:"muv"} ],
+    "Skoda": [ {model:"Slavia", type:"sedan"}, {model:"Kushaq", type:"suv"} ],
+    "Volkswagen": [ {model:"Virtus", type:"sedan"}, {model:"Taigun", type:"suv"} ],
+    "MG": [ {model:"Astor", type:"suv"}, {model:"Hector", type:"suv"} ],
+    "Other / not listed": [ {model:"Custom", type:"hatchback"} ]
+  },
+  bike: {
+    "Honda": [ {model:"Activa 6G", type:"scooter"}, {model:"Shine", type:"motorcycle"}, {model:"Unicorn", type:"motorcycle"} ],
+    "TVS": [ {model:"Jupiter", type:"scooter"}, {model:"Ntorq", type:"scooter"}, {model:"Apache RTR 160", type:"motorcycle"} ],
+    "Royal Enfield": [ {model:"Classic 350", type:"motorcycle"}, {model:"Bullet 350", type:"motorcycle"}, {model:"Hunter 350", type:"motorcycle"} ],
+    "Bajaj": [ {model:"Pulsar 150", type:"motorcycle"}, {model:"Platina", type:"motorcycle"}, {model:"Chetak (electric)", type:"scooter"} ],
+    "Hero MotoCorp": [ {model:"Splendor Plus", type:"motorcycle"}, {model:"HF Deluxe", type:"motorcycle"}, {model:"Destini 125", type:"scooter"} ],
+    "Yamaha": [ {model:"FZ-S", type:"motorcycle"}, {model:"R15", type:"motorcycle"}, {model:"Fascino", type:"scooter"} ],
+    "Suzuki": [ {model:"Access 125", type:"scooter"}, {model:"Gixxer", type:"motorcycle"} ],
+    "KTM": [ {model:"Duke 200", type:"motorcycle"}, {model:"Duke 390", type:"motorcycle"} ],
+    "Other / not listed": [ {model:"Custom", type:"motorcycle"} ]
   }
-  return id;
+};
+
+const COLORS = [
+  {name:"Pearl White", hex:"#f3f2ee"}, {name:"Silky Silver", hex:"#c7ccd1"},
+  {name:"Racing Red", hex:"#f2555b"}, {name:"Electric Blue", hex:"#3b82f6"},
+  {name:"Midnight Black", hex:"#3a3d42"}, {name:"Graphite Grey", hex:"#6b7280"},
+  {name:"Solar Yellow", hex:"#e4b93f"}, {name:"Cyan Ice", hex:"#22d3ee"},
+];
+
+let currentCategory = 'car';
+let selectedColor = null;
+let selectedBodyType = 'hatchback';
+
+function renderVehicleSVG(target, bodyType) {
+  document.getElementById(target).innerHTML = VEHICLE_SVGS[bodyType] || VEHICLE_SVGS.hatchback;
 }
 
-function authHeaders(extra = {}) {
-  return { 'X-User-Id': getUserId(), ...extra };
+function setCategory(cat) {
+  currentCategory = cat;
+  document.getElementById('cat-car').classList.toggle('active', cat === 'car');
+  document.getElementById('cat-bike').classList.toggle('active', cat === 'bike');
+  const makeSel = document.getElementById('cf-make');
+  makeSel.innerHTML = Object.keys(CATEGORY_DB[cat]).map(m => `<option value="${m}">${m}</option>`).join('');
+  onMakeChange();
 }
+
+function onMakeChange() {
+  const make = document.getElementById('cf-make').value;
+  const modelSel = document.getElementById('cf-model');
+  modelSel.innerHTML = CATEGORY_DB[currentCategory][make].map(m => `<option value="${m.model}" data-type="${m.type}">${m.model}</option>`).join('');
+  onModelChange();
+}
+
+function onModelChange() {
+  const modelSel = document.getElementById('cf-model');
+  const opt = modelSel.options[modelSel.selectedIndex];
+  selectedBodyType = opt ? opt.dataset.type : 'hatchback';
+  renderVehicleSVG('preview-car', selectedBodyType);
+  document.getElementById('preview-name').textContent = `${document.getElementById('cf-make').value} ${opt ? opt.value : ''}`;
+  document.getElementById('preview-sub').textContent = selectedBodyType.toUpperCase();
+}
+
+function pickColor(hex, name, el) {
+  selectedColor = {hex, name};
+  document.documentElement.style.setProperty('--car-color', hex);
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('cf-color-label').textContent = name;
+}
+
+function initConfigurator() {
+  setCategory('car');
+  const colorRow = document.getElementById('cf-colors');
+  colorRow.innerHTML = COLORS.map(c => `<div class="swatch" style="background:${c.hex}" onclick="pickColor('${c.hex}','${c.name}',this)" title="${c.name}"></div>`).join('');
+  renderVehicleSVG('hero-car', 'suv');
+  document.documentElement.style.setProperty('--car-color', '#3b82f6');
+}
+
+/* ---------------- 3D drag-to-rotate + idle turntable ---------------- */
+function attachTiltDrag(wrapId, rigId) {
+  const wrap = document.getElementById(wrapId);
+  const rig = document.getElementById(rigId);
+  if (!wrap || !rig) return;
+  let dragging = false, startX = 0, rotY = 0, rotX = 0;
+
+  function setTransform(rx, ry) {
+    rig.style.transform = `rotateY(${ry}deg) rotateX(${rx}deg)`;
+  }
+
+  wrap.addEventListener('pointerdown', e => {
+    dragging = true; rig.classList.remove('idle-spin');
+    startX = e.clientX;
+    wrap.setPointerCapture(e.pointerId);
+  });
+  wrap.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    rotY = Math.max(-40, Math.min(40, dx * 0.4));
+    setTransform(rotX, rotY);
+  });
+  wrap.addEventListener('pointerup', () => { dragging = false; setTimeout(() => { rig.style.transform=''; rig.classList.add('idle-spin'); }, 200); });
+  wrap.addEventListener('pointerleave', () => { if (dragging) { dragging = false; rig.style.transform=''; rig.classList.add('idle-spin'); } });
+
+  wrap.addEventListener('mousemove', e => {
+    if (dragging) return;
+    const rect = wrap.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    rig.classList.remove('idle-spin');
+    setTransform(py * -10, px * 20);
+  });
+  wrap.addEventListener('mouseleave', () => { rig.style.transform=''; rig.classList.add('idle-spin'); });
+}
+
+/* ---------------- device-local user id (auth-lite) ---------------- */
+function getUserId() {
+  let id = localStorage.getItem('autoexplain_user_id');
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem('autoexplain_user_id', id); }
+  return id;
+}
+function authHeaders(extra = {}) { return { 'X-User-Id': getUserId(), ...extra }; }
 
 let vehicles = [];
 let selectedVehicleId = null;
 let chatHistory = [];
+let currentPage = 'landing';
 
 async function api(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { ...authHeaders(), ...(options.headers || {}) },
-  });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`${res.status}: ${detail}`);
-  }
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers: { ...authHeaders(), ...(options.headers || {}) } });
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
   return res.status === 204 ? null : res.json();
 }
 
-// ---------------- Vehicles ----------------
-async function loadVehicles() {
-  try {
-    vehicles = await api('/vehicles');
-  } catch (e) {
-    console.error('Failed to load vehicles', e);
-    vehicles = [];
+/* ---------------- Page navigation (the "story") ---------------- */
+function goToPage(name, vehicleId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'auto' });
+  currentPage = name;
+
+  if (name === 'vehicle' && vehicleId) {
+    loadVehicleWorkspace(vehicleId);
   }
+  updateBreadcrumb();
+}
+
+function updateBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  if (currentPage === 'landing') { bc.innerHTML = ''; return; }
+  if (currentPage === 'garage') { bc.innerHTML = `<span class="current">Garage</span>`; return; }
+  if (currentPage === 'vehicle') {
+    const v = vehicles.find(v => v.id === selectedVehicleId);
+    bc.innerHTML = `<a href="#" onclick="goToPage('garage');return false;" style="color:var(--text-faint);text-decoration:none;">Garage</a><span class="sep">/</span><span class="current">${v ? escapeHtml(v.nickname || v.make + ' ' + v.model) : 'Vehicle'}</span>`;
+  }
+}
+
+async function loadVehicles() {
+  try { vehicles = await api('/vehicles'); } catch (e) { console.error(e); vehicles = []; }
   renderVehicles();
 }
 
 function renderVehicles() {
   const row = document.getElementById('vehicle-row');
-  row.innerHTML = '';
-
-  vehicles.forEach(v => {
-    const card = document.createElement('div');
-    card.className = 'plate' + (v.id === selectedVehicleId ? ' selected' : '');
-    card.onclick = () => selectVehicle(v.id);
-    card.innerHTML = `
-      <div class="plate-reg">${v.registration_number || 'NO REG SET'}</div>
+  row.innerHTML = vehicles.map(v => `
+    <div class="plate" onclick="goToPage('vehicle','${v.id}')">
+      <span class="plate-arrow">&rarr;</span>
+      <div class="plate-top">
+        <span class="plate-dot" style="background:${v.color || 'var(--text-faint)'}"></span>
+        <span class="plate-reg">${v.registration_number || (v.body_type || '').toUpperCase() || 'VEHICLE'}</span>
+      </div>
       <div class="plate-name">${escapeHtml(v.nickname || (v.make + ' ' + v.model))}</div>
-      <div class="plate-year">${v.make} ${v.model}${v.year ? ' &middot; ' + v.year : ''}</div>
-    `;
-    row.appendChild(card);
-  });
-
-  const addCard = document.createElement('div');
-  addCard.className = 'plate-add';
-  addCard.textContent = '+ Add vehicle';
-  addCard.onclick = () => toggleAddForm(true);
-  row.appendChild(addCard);
-
-  document.getElementById('no-vehicle-empty').style.display =
-    vehicles.length === 0 ? 'block' : 'none';
-
-  if (!selectedVehicleId && vehicles.length > 0) {
-    selectVehicle(vehicles[0].id);
-  }
-}
-
-function toggleAddForm(show) {
-  document.getElementById('add-vehicle-form').style.display = show ? 'block' : 'none';
+      <div class="plate-meta">${v.make} ${v.model}${v.year ? ' &middot; ' + v.year : ''}</div>
+    </div>
+  `).join('');
+  document.getElementById('no-vehicle-empty').style.display = vehicles.length === 0 ? 'block' : 'none';
 }
 
 async function createVehicle() {
-  const make = document.getElementById('v-make').value.trim();
-  const model = document.getElementById('v-model').value.trim();
-  if (!make || !model) { alert('Make and model are required.'); return; }
+  const make = document.getElementById('cf-make').value;
+  const modelSel = document.getElementById('cf-model');
+  const model = modelSel.value;
+  if (!make || !model) { alert('Pick a make and model.'); return; }
 
   const payload = {
     make, model,
-    year: parseInt(document.getElementById('v-year').value) || null,
-    nickname: document.getElementById('v-nickname').value.trim() || null,
-    registration_number: document.getElementById('v-reg').value.trim() || null,
+    year: parseInt(document.getElementById('cf-year').value) || null,
+    nickname: document.getElementById('cf-nickname').value.trim() || null,
+    registration_number: document.getElementById('cf-reg').value.trim() || null,
+    color: selectedColor ? selectedColor.hex : null,
+    body_type: selectedBodyType,
   };
 
   try {
-    const vehicle = await api('/vehicles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    toggleAddForm(false);
-    ['v-make','v-model','v-year','v-nickname','v-reg'].forEach(id => document.getElementById(id).value = '');
+    const vehicle = await api('/vehicles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    document.getElementById('cf-nickname').value = '';
+    document.getElementById('cf-reg').value = '';
     await loadVehicles();
-    selectVehicle(vehicle.id);
+    goToPage('vehicle', vehicle.id);
   } catch (e) {
     alert('Could not add vehicle: ' + e.message);
   }
 }
 
-function selectVehicle(id) {
+function loadVehicleWorkspace(id) {
   selectedVehicleId = id;
-  renderVehicles();
   const v = vehicles.find(v => v.id === id);
-  document.getElementById('vehicle-workspace').style.display = v ? 'block' : 'none';
-  document.getElementById('workspace-title').textContent =
-    v ? `${v.nickname || (v.make + ' ' + v.model)} — Report` : 'Report';
+  if (!v) return;
+
+  document.getElementById('v-eyebrow').textContent = (v.body_type || 'vehicle');
+  document.getElementById('v-title').textContent = v.nickname || `${v.make} ${v.model}`;
+  document.getElementById('v-sub').textContent = `${v.make} ${v.model}${v.year ? ' · ' + v.year : ''}${v.registration_number ? ' · ' + v.registration_number : ''}`;
+
+  if (v.color) document.documentElement.style.setProperty('--car-color', v.color);
+  renderVehicleSVG('vhero-car', v.body_type || 'hatchback');
+
   document.getElementById('analysis-result').innerHTML = '';
   loadHistory(id);
 }
 
-// ---------------- Upload / analyze ----------------
+/* ---------------- Upload / analyze ---------------- */
 const uploadZone = document.getElementById('upload-zone');
 const fileInput = document.getElementById('file-input');
-
 uploadZone.addEventListener('click', () => fileInput.click());
 uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-uploadZone.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadZone.classList.remove('dragover');
-  if (e.dataTransfer.files.length) analyzeFile(e.dataTransfer.files[0]);
-});
-fileInput.addEventListener('change', () => {
-  if (fileInput.files.length) analyzeFile(fileInput.files[0]);
-});
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('dragover'); if (e.dataTransfer.files.length) analyzeFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => { if (fileInput.files.length) analyzeFile(fileInput.files[0]); });
 
 async function analyzeFile(file) {
   if (!selectedVehicleId) { alert('Select a vehicle first.'); return; }
-
   const statusLine = document.getElementById('status-line');
   statusLine.className = 'status-line active';
-  statusLine.textContent = `> reading ${file.name} ... this can take 15-30s (OCR + AI analysis)`;
+  statusLine.textContent = `reading ${file.name} — OCR + AI analysis, ~15-30s`;
 
   const form = new FormData();
   form.append('vehicle_id', selectedVehicleId);
@@ -582,23 +723,18 @@ async function analyzeFile(file) {
     renderAnalysis(result);
     loadHistory(selectedVehicleId);
   } catch (e) {
-    statusLine.textContent = `> failed: ${e.message}`;
+    statusLine.textContent = `failed: ${e.message}`;
   }
 }
 
 function renderAnalysis(report) {
   const el = document.getElementById('analysis-result');
-  const redCount = report.issues.filter(i => i.severity === 'red').length;
-
-  let html = `<div class="summary-banner">
-    <strong>${escapeHtml(report.overall_summary)}</strong>
-    ${report.extraction_confidence < 0.6 ? '<br><span style="color:var(--yellow);font-size:12px;">⚠ Low extraction confidence — the scan quality may have affected accuracy. Consider re-uploading a clearer photo.</span>' : ''}
-  </div>`;
+  let html = `<div class="summary-banner"><strong>${escapeHtml(report.overall_summary)}</strong>
+    ${report.extraction_confidence < 0.6 ? '<br><span style="color:var(--yellow);font-size:12px;">&#9888; Low extraction confidence — the scan quality may have affected accuracy.</span>' : ''}</div>`;
 
   report.issues.forEach(issue => {
     const sev = issue.severity;
-    html += `
-    <div class="issue-card sev-${sev}">
+    html += `<div class="issue-card sev-${sev}">
       <div class="issue-head">
         <div class="issue-title">${escapeHtml(issue.title)}</div>
         <div class="sev-pill sev-${sev}">${sev} &middot; ${issue.risk_score}/100</div>
@@ -613,7 +749,7 @@ function renderAnalysis(report) {
     </div>`;
   });
 
-  html += `<div style="font-size:11px;color:var(--text-faint);margin-top:8px;">${escapeHtml(report.disclaimer)}</div>`;
+  html += `<div style="font-size:11px;color:var(--text-faint);margin-top:8px;font-family:var(--mono);">${escapeHtml(report.disclaimer)}</div>`;
   el.innerHTML = html;
 }
 
@@ -622,65 +758,41 @@ function formatCost(cost) {
   return `₹${cost.low.toLocaleString('en-IN')} – ₹${cost.high.toLocaleString('en-IN')}`;
 }
 
-// ---------------- History ----------------
 async function loadHistory(vehicleId) {
   const list = document.getElementById('history-list');
   try {
     const reports = await api(`/vehicles/${vehicleId}/reports`);
-    if (!reports.length) {
-      list.innerHTML = '<div class="empty-state">No reports analyzed yet for this vehicle.</div>';
-      return;
-    }
-    list.innerHTML = reports.map(r => `
+    list.innerHTML = reports.length ? reports.map(r => `
       <div class="history-item" onclick="viewReport('${r.id}')">
         <span>${escapeHtml(r.filename || 'report')} — ${escapeHtml(r.overall_summary)}</span>
         <span class="h-date">${new Date(r.created_at).toLocaleDateString()} ${r.red_count ? `&middot; ${r.red_count} urgent` : ''}</span>
-      </div>
-    `).join('');
-  } catch (e) {
-    list.innerHTML = '<div class="empty-state">Could not load history.</div>';
-  }
+      </div>`).join('') : '<div class="empty-state">No reports analyzed yet for this vehicle.</div>';
+  } catch (e) { list.innerHTML = '<div class="empty-state">Could not load history.</div>'; }
 }
 
 async function viewReport(reportId) {
   try {
     const report = await api(`/reports/${reportId}`);
     renderAnalysis(report);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } catch (e) {
-    alert('Could not load report: ' + e.message);
-  }
+  } catch (e) { alert('Could not load report: ' + e.message); }
 }
 
-// ---------------- Chat ----------------
-function toggleChat() {
-  document.getElementById('chat-panel').classList.toggle('open');
-}
+/* ---------------- Chat ---------------- */
+function toggleChat() { document.getElementById('chat-panel').classList.toggle('open'); }
 
 async function sendChat() {
   const input = document.getElementById('chat-input');
   const message = input.value.trim();
   if (!message) return;
   input.value = '';
-
   appendMsg('user', message);
   const typingEl = appendMsg('assistant', 'thinking...', true);
 
   try {
-    const res = await api('/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        vehicle_id: selectedVehicleId,
-        message,
-        history: chatHistory,
-      }),
-    });
+    const res = await api('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vehicle_id: selectedVehicleId, message, history: chatHistory }) });
     typingEl.remove();
     appendMsg('assistant', res.reply);
-    document.getElementById('chat-grounding').textContent =
-      res.grounded_in_report ? 'grounded in report' : 'general knowledge';
-
+    document.getElementById('chat-grounding').textContent = res.grounded_in_report ? 'grounded in report' : 'general knowledge';
     chatHistory.push({ role: 'user', content: message });
     chatHistory.push({ role: 'assistant', content: res.reply });
     if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
@@ -700,13 +812,13 @@ function appendMsg(role, text, typing = false) {
   return div;
 }
 
-function escapeHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str ?? '';
-  return d.innerHTML;
-}
+function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
 
-// ---------------- Init ----------------
+/* ---------------- Init ---------------- */
+initConfigurator();
+attachTiltDrag('config-preview-wrap', 'preview-rig');
+attachTiltDrag('vhero-rig-wrap', 'vhero-rig');
+attachTiltDrag('scan-rig', 'hero-rig');
 loadVehicles();
 </script>
 
